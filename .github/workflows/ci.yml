@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: promptlib
+          POSTGRES_PASSWORD: promptlib
+          POSTGRES_DB: promptlib
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U promptlib"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://promptlib:promptlib@localhost:5432/promptlib
+      AUTH_SECRET: ci-only-placeholder-secret-not-for-production-use
+      ALLOWED_EMAIL_DOMAIN: algoanalytics.com
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx prisma migrate deploy
+
+      - run: npm run lint
+
+      - run: npx tsc --noEmit
+
+      - run: npm test
