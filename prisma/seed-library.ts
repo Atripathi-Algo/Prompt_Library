@@ -4,6 +4,7 @@ import { seedPromptsBatchA } from "./prompt-data-batch-a";
 import { seedPromptsBatchB } from "./prompt-data-batch-b";
 import { seedPromptsBatchC } from "./prompt-data-batch-c";
 import { seedPromptsBatchD } from "./prompt-data-batch-d";
+import { seedPromptsClientPresentations } from "./prompt-data-client-presentations";
 
 const allSeedPrompts = [
   ...seedPrompts,
@@ -11,6 +12,7 @@ const allSeedPrompts = [
   ...seedPromptsBatchB,
   ...seedPromptsBatchC,
   ...seedPromptsBatchD,
+  ...seedPromptsClientPresentations,
 ];
 
 const prisma = new PrismaClient();
