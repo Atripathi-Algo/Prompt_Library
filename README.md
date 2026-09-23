@@ -3,12 +3,12 @@
 An internal prompt library for AlgoAnalytics. Everyone with an
 `@algoanalytics.com` account can sign in and browse, search, and submit
 prompts; admins get an approval workflow, a usage dashboard, and user
-management. It ships pre-seeded with **387 prompts across 16 categories**
+management. It ships pre-seeded with **412 prompts across 17 categories**
 (Data Scientist, Managers, Marketing, UI/UX Developers, Full Stack
 Developers, Mobile App Development, Github Commands, Azure, AWS, Docker,
-QA Testing, Research Prompt, Finance, Presentation Skills, Content
-Generation, General), each tagged with a complexity level and a
-recommended AI tool/model to use it with.
+QA Testing, Research Prompt, Finance, Presentation Skills, Project
+Planning, Content Generation, General), each tagged with a complexity
+level and a recommended AI tool/model to use it with.
 
 ## Features
 
@@ -54,12 +54,12 @@ recommended AI tool/model to use it with.
 - A Google Cloud OAuth client (only needed for Google sign-in; email/password
   works without it)
 
-## First-time setup
+## First-time setup (local dev)
 
 1. Start Postgres:
 
    ```bash
-   docker compose up -d
+   docker compose up -d db
    ```
 
 2. Copy `.env.example` to `.env` and fill in the required values (see the
@@ -71,7 +71,7 @@ recommended AI tool/model to use it with.
    npm install
    npm run db:migrate
    npm run db:seed          # creates the first admin account + one sample prompt
-   npm run db:seed-library   # loads the full 387-prompt library (idempotent)
+   npm run db:seed-library   # loads the full 412-prompt library (idempotent)
    ```
 
    `db:seed` creates the first admin with password `ChangeMe123!` — change
@@ -86,6 +86,53 @@ recommended AI tool/model to use it with.
 
    The app runs at `http://localhost:3000` by default (or whatever port
    `next dev` picks / you override with `--port`).
+
+## Running with Docker (containerized, no local Node needed)
+
+The whole stack — Postgres, a one-off migration step, and the app itself —
+runs via Docker Compose:
+
+```bash
+cp .env.example .env   # fill in the values from the table below first
+docker compose up -d
+```
+
+This starts three things:
+
+- **`db`** — Postgres 16, with a healthcheck the other services wait on.
+- **`migrate`** — a one-off container that runs `prisma migrate deploy`
+  against `db` and then exits. `app` won't start until this finishes
+  successfully. It's built from the same Dockerfile's `builder` stage
+  (full `node_modules`) rather than the app's own slim runtime image,
+  because the Prisma CLI needs dependencies that the app's trimmed
+  `output: "standalone"` bundle deliberately doesn't include.
+- **`app`** — the Next.js production server (`next build` output, run with
+  `node server.js`), listening on container port 3000, published to
+  **host port 3010** (`3000` was already taken by another project's
+  container on the dev machine this was built on — change the left side of
+  the `app.ports` mapping in `docker-compose.yml` if you want a different
+  host port).
+
+The app container's `DATABASE_URL` is hard-set in `docker-compose.yml` to
+point at the `db` service by its Compose network name — whatever
+`DATABASE_URL` you put in `.env` for local `npm run dev` use is overridden
+for the containerized run, since `localhost` means something different
+inside a container.
+
+Seed the library the same way as local dev, just point `DATABASE_URL` at
+the exposed Postgres port (5432, same as local) and run the seed scripts
+from the host with `npm run db:seed` / `npm run db:seed-library` — they
+don't need to run inside the container.
+
+Useful commands:
+
+```bash
+docker compose logs -f app       # tail the app's logs
+docker compose build app         # rebuild after a code change
+docker compose up -d --build     # rebuild + restart everything
+docker compose down              # stop everything (keeps the named volume/data)
+docker compose down -v           # stop everything AND delete the database volume
+```
 
 ## Environment variables
 
@@ -156,7 +203,7 @@ prisma/
   migrations/                # applied migrations
   seed.ts                    # creates the first admin + one sample prompt
   seed-library.ts            # loads all seed-prompt-data-*.ts files (idempotent)
-  prompt-data*.ts            # the 387 seeded prompts, split into batches
+  prompt-data*.ts            # the 412 seeded prompts, split into batches
 src/
   app/
     (auth)/login, /signup    # auth pages
@@ -169,6 +216,8 @@ src/
 scripts/
   backup-db.ps1 / .sh        # local Postgres dump
 .github/workflows/ci.yml     # lint + typecheck + test on push/PR
+Dockerfile                   # multi-stage build: deps -> builder -> runner
+docker-compose.yml            # db + migrate (one-off) + app services
 ```
 
 ## Operations

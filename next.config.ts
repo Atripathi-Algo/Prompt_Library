@@ -17,6 +17,10 @@ const csp = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  // Produces a minimal .next/standalone server bundle (only the deps it
+  // actually needs) — keeps the Docker image small instead of shipping
+  // the whole node_modules tree.
+  output: "standalone",
   async headers() {
     return [
       {

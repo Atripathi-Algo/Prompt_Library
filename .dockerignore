@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.github
+backups
+*.log
+npm-debug.log*
+
+.env
+.env.*
+!.env.example
+
+coverage
+.vscode
+.claude

@@ -5,6 +5,7 @@ import { seedPromptsBatchB } from "./prompt-data-batch-b";
 import { seedPromptsBatchC } from "./prompt-data-batch-c";
 import { seedPromptsBatchD } from "./prompt-data-batch-d";
 import { seedPromptsClientPresentations } from "./prompt-data-client-presentations";
+import { seedPromptsProjectPlanning } from "./prompt-data-project-planning";
 
 const allPrompts = [
   ...seedPrompts,
@@ -13,6 +14,7 @@ const allPrompts = [
   ...seedPromptsBatchC,
   ...seedPromptsBatchD,
   ...seedPromptsClientPresentations,
+  ...seedPromptsProjectPlanning,
 ];
 
 const VARIABLE_PATTERN = /\{\{([a-zA-Z0-9_]+)\}\}/g;

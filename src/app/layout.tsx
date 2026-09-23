@@ -13,6 +13,12 @@ export const metadata: Metadata = {
   description: "AlgoAnalytics internal prompt library",
 };
 
+// Every page here is session/DB-backed (an internal authenticated tool, not
+// a marketing site) — force dynamic rendering everywhere instead of letting
+// Next.js try to statically prerender pages like /admin at build time,
+// which fails without a real DATABASE_URL available in the build environment.
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${jakarta.variable} h-full antialiased`}>

@@ -10,6 +10,48 @@ services:
       - "5432:5432"
     volumes:
       - promptlib_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U promptlib"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-off: applies pending Prisma migrations, then exits. Runs from the
+  # "builder" stage (full node_modules) rather than the app's trimmed
+  # standalone runtime image, which doesn't carry everything the Prisma CLI
+  # itself needs (@prisma/config's own dependency tree).
+  migrate:
+    build:
+      context: .
+      target: builder
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://promptlib:promptlib@db:5432/promptlib
+    entrypoint: ["npx", "prisma", "migrate", "deploy"]
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    environment:
+      # Overrides whatever DATABASE_URL is in .env — inside the compose
+      # network, Postgres is reachable at the "db" service name, not localhost.
+      DATABASE_URL: postgresql://promptlib:promptlib@db:5432/promptlib
+    ports:
+      # Host port 3000 is already taken by another project's container on
+      # this machine — mapped to 3010 instead. Change the left side if you
+      # want a different host port; the container always listens on 3000.
+      - "3010:3000"
 
 volumes:
   promptlib_pgdata:
